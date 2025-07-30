@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Movie Recommender</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 { margin-bottom: 20px; }
+    form { margin-top: 30px; }
+    input[type="text"] {
+      padding: 10px;
+      width: 300px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-left: 10px;
+      border: none;
+      border-radius: 8px;
+      background-color: #ffcc00;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover { background-color: #ffaa00; }
+    #result {
+      margin-top: 30px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    ul { text-align: left; display: inline-block; }
+    .not-found {
+      color: #ffcccb;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    /* Suggestions dropdown */
+    #suggestions {
+      background: white;
+      color: black;
+      width: 300px;
+      margin: auto;
+      border-radius: 8px;
+      position: relative;
+      font-size: 14px;
+      z-index: 999;
+    }
+    #suggestions div {
+      padding: 5px;
+      cursor: pointer;
+    }
+    #suggestions div:hover {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎬 Movie Recommendation System</h1>
+  <form id="recommendForm">
+    <input type="text" name="movie" id="movieInput" placeholder="Enter movie name..." required>
+    <button type="submit">Recommend</button>
+    <div id="suggestions"></div>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('recommendForm');
+    const resultDiv = document.getElementById('result');
+    const input = document.getElementById('movieInput');
+    const suggestionsDiv = document.getElementById('suggestions');
+
+    // 🔹 Handle form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const response = await fetch('/recommend', { method: 'POST', body: formData });
+      const data = await response.json();
+
+      if (data.found) {
+        resultDiv.innerHTML = "<h3>Recommended Movies:</h3><ul>" +
+          data.movies.map(m => `<li>${m}</li>`).join('') + "</ul>";
+      } else {
+        resultDiv.innerHTML = "<p class='not-found'>😢 Movie not found<br>Try another one!</p>";
+      }
+    });
+
+    // 🔹 Auto-suggestions while typing
+    input.addEventListener('input', async () => {
+      const query = input.value.trim();
+      if (!query) {
+        suggestionsDiv.innerHTML = '';
+        return;
+      }
+
+      const response = await fetch(`/suggest?q=${query}`);
+      const suggestions = await response.json();
+
+      if (suggestions.length > 0) {
+        suggestionsDiv.innerHTML = suggestions.map(movie =>
+          `<div onclick="selectMovie('${movie}')">${movie}</div>`
+        ).join('');
+      } else {
+        suggestionsDiv.innerHTML = '';
+      }
+    });
+
+    function selectMovie(movie) {
+      input.value = movie;
+      suggestionsDiv.innerHTML = '';
+    }
+  </script>
+</body>
+</html>
